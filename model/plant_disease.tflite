@@ -1,0 +1,38 @@
+import tensorflow as tf
+import numpy as np
+import os
+
+drive.mount('/content/drive')
+
+drive_save_path = '/content/drive/MyDrive/Plant_Disease_Project_final/'
+
+# ── Load your best trained model ─────────────────────────────────────────────
+model = tf.keras.models.load_model(
+    drive_save_path + 'plant_disease_hierarchical_final.keras'
+)
+print("✅ Model loaded!")
+
+# ── Convert to TFLite ─────────────────────────────────────────────────────────
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+
+# ✅ Quantization — reduces model size & speeds up on Pi
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+
+tflite_model = converter.convert()
+print("✅ Model converted to TFLite!")
+
+# ── Save TFLite model to Drive ────────────────────────────────────────────────
+tflite_path = os.path.join(drive_save_path, 'plant_disease.tflite')
+with open(tflite_path, 'wb') as f:
+    f.write(tflite_model)
+print(f"✅ TFLite model saved: {tflite_path}")
+
+# ── Check size reduction ──────────────────────────────────────────────────────
+original_size = os.path.getsize(
+    drive_save_path + 'plant_disease_hierarchical_final.keras'
+) / (1024 * 1024)
+tflite_size = os.path.getsize(tflite_path) / (1024 * 1024)
+
+print(f"\n📦 Original .keras : {original_size:.2f} MB")
+print(f"📦 TFLite model    : {tflite_size:.2f} MB")
+print(f"✅ Size reduced by  : {((original_size-tflite_size)/original_size*100):.1f}%")
